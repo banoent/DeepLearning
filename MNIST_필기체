@@ -1,0 +1,63 @@
+#MNIST로 숫자 필기체를 불러와서 모델에 학습 시킨 후 내가 직접 손으로 숫자를 필기해 모델에 적용시켜 확인
+
+import os
+import numpy as np
+import tensorflow as tf
+import matplotlib.pyplot as plt
+from tensorflow.keras import layers
+
+data_dir = 'C:/d_data/train'
+
+def load_data(data_dir):
+    images = []
+    labels = []
+    for label in os.listdir(data_dir):
+        label_dir = os.path.join(data_dir, label)
+        for image_name in os.listdir(label_dir):
+            image_path = os.path.join(label_dir, image_name) #파일 경로내의 모든 이미지
+            image = tf.keras.preprocessing.image.load_img(image_path, color_mode = 'rgb', target_size = (28,28))
+            image = tf.keras.preprocessing.image.img_to_array(image)
+            images.append(image)
+            labels.append(int(label))
+    return np.array(images), np.array(labels)
+    #os로 데이터 불러오기
+    
+mnist = tf.keras.datasets.mnist
+    
+(x_train, y_train),(x_test, y_test) = mnist.load_data()
+x_train, x_test = x_train / 255.0, x_test / 255.0
+
+test_images , test_labels = load_data(data_dir)
+test_images = test_images / 255
+
+x_train.shape , x_test.shape, test_images.shape
+#데이터 불러오고 전처리
+
+model = tf.keras.models.Sequential()
+model.add(tf.keras.layers.Flatten(input_shape=(28,28,3)))
+model.add(tf.keras.layers.Dense(512, activation='relu'))
+model.add(tf.keras.layers.Dropout(0.2))
+model.add(tf.keras.layers.Dense(10, activation='softmax'))
+#신경망 구축
+
+model.compile(optimizer='adam',
+loss='sparse_categorical_crossentropy',
+metrics=['accuracy'])
+model.fit(x_train, y_train, epochs=5)
+model.evaluate(x_test, y_test)
+#모델 학습 후, 모델 평가
+
+h = model.fit(x_train, y_train, epochs = 10, validation_data=(test_images, test_labels))
+#학습한 모델을 내가 불러온 데이터로 적용
+
+h = model.history.history
+plt.subplot(1,2,1)
+plt.plot(h['loss'])
+plt.plot(h['val_loss'])
+plt.legend(['loss', 'val_loss'])
+
+plt.subplot(1,2,2)
+plt.plot(h['accuracy'])
+plt.plot(h['val_accuracy'])
+plt.legend(['acc', 'val_acc'])
+#적용한 결과 손실함수와 정확도를 그래프로 나타냄
