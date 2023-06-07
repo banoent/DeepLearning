@@ -1,0 +1,62 @@
+#쓰레기 분리수거 프로젝트
+
+import numpy as np
+import matplotlib.pyplot as plt
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+
+#데이터 경로 불러오기
+train_dir = 'C:/data/train'
+test_dir = 'C:/data/test'
+
+#신경망 구축
+
+model = keras.models.Sequential()
+model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(64, 64, 3)))
+model.add(MaxPooling2D((2, 2)))
+model.add(Conv2D(64, (3, 3), activation='relu'))
+model.add(MaxPooling2D((2, 2)))
+model.add(Conv2D(64, (3, 3), activation='relu'))
+model.add(Flatten())
+model.add(Dense(64, activation='relu'))
+model.add(Dense(7, activation='softmax'))
+
+#신경망 요약
+model.summary()
+
+#모델 컴파일
+model.compile(optimizer='adam', loss='categorical_crossentropy',  metrics=['acc'])
+
+#이미지 데이터 전처리
+
+train_datagen = ImageDataGenerator(rescale = 1./255)
+test_datagen = ImageDataGenerator(rescale = 1./255)
+
+train_generator = train_datagen.flow_from_directory(
+  train_dir, #경로
+  target_size=(64, 64), #이미지 크기 조정
+  batch_size=5, #몇장씩 뽑아 쓸 것인지 지정
+  color_mode = 'rgb', #컬러 이미지로 설정
+  class_mode = 'categorical') #다중 결과값, 즉 'softmax'므로 'categorical'
+
+test_generator = test_datagen.flow_from_directory(
+  test_dir,
+  target_size=(64, 64),
+  batch_size=5,
+  color_mode = 'rgb',
+  class_mode = 'categorical')
+
+#학습 후 모델 평가
+history = model.fit(train_generator, epochs=10, validation_data=test_generator, validation_steps=4)
+
+plt.subplot(1,2,1)
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.legend(['loss', 'val_loss'])
+
+plt.subplot(1,2,2)
+plt.plot(history.history['acc'])
+plt.plot(history.history['val_acc'])
+plt.legend(['acc', 'val_acc'])
